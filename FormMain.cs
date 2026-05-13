@@ -1,6 +1,7 @@
 ﻿using Aerotech.Automation1.DotNet;
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace QPICPSOControlAutomation1
@@ -17,6 +18,7 @@ namespace QPICPSOControlAutomation1
         #region 窗口打开/关闭
         private void FormMain_Load(object sender, EventArgs e)
         {
+            this.Visible = false;  // 先隐藏窗口，防止闪烁
             try
             {
                 // 打开时链接控制箱报错
@@ -27,10 +29,31 @@ namespace QPICPSOControlAutomation1
                 // 打开时设定PsoOutputPin，依据硬件连接(当前为XR3，Output2，链接引脚10&12)
                 // https://help.aerotech.com/automation1/hardware-manuals/Automation1-iXR3-and-XR3-web/Chapter-2-Installation-and-Configuration/Position-Synchronized-Output-XR3.htm
                 controller.Runtime.Commands.Pso.PsoOutputConfigureOutput("X", PsoOutputPin.XR3PsoOutput2);
+                DataCollectionConfiguration configuration = new DataCollectionConfiguration(1, DataCollectionFrequency.Frequency1kHz);
+                configuration.Axis.Add(AxisDataSignal.PsoStatus, "X");
+                DataCollectionResults result = controller.Runtime.DataCollection.CollectSnapshot(configuration);
+                double rawValue = result.AllResults.First().Points[0]; ;
+                int value = (int)rawValue;  // double → int
+
+                // 用位掩码判断
+                if ((value & 1024) != 0)
+                {
+                    //1039
+                    Button1.Text = "Laser On";
+                    Button1.BackColor = Color.PaleGreen;
+                }
+                else
+                {
+                    //527
+                    Button1.Text = "Laser Off";
+                    Button1.BackColor = SystemColors.Control;  // 恢复默认
+                }
+                this.Visible = true;  // 成功后显示窗口
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"控制器连接/启动失败: {ex.Message}", "错误");
+                Application.Exit();  // 终止程序
             }
         }
         private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
@@ -43,26 +66,25 @@ namespace QPICPSOControlAutomation1
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"关闭时出错: {ex.Message}");
+                Application.Exit();  // 终止程序
             }
         }
         #endregion
 
         private void Button1_Click(object sender, EventArgs e)
         {
-            Button btn = sender as Button;
-
-            if (btn.Text == "Laser On")
+            if (Button1.Text == "Laser On")
             {
                 controller.Runtime.Commands.Pso.PsoOutputOff("X");
-                btn.Text = "Laser Off";
-                btn.BackColor = SystemColors.Control;  // 恢复默认
+                Button1.Text = "Laser Off";
+                Button1.BackColor = SystemColors.Control;  // 恢复默认
             }
             else
             {
                 controller.Runtime.Commands.Pso.PsoOutputOn("X");
-                btn.Text = "Laser On";
-                btn.BackColor = Color.PaleGreen;
-            }            
+                Button1.Text = "Laser On";
+                Button1.BackColor = Color.PaleGreen;
+            }
         }
         private void controller_ExceptionOccurred(object sender, ExceptionOccurredEventArgs e)
         {
@@ -73,6 +95,7 @@ namespace QPICPSOControlAutomation1
             Invoke(new Action(() =>
             {
                 MessageBox.Show($"{e.Exception.Message}", "Controller Error");
+                Application.Exit();  // 终止程序
             }));
         }
     }

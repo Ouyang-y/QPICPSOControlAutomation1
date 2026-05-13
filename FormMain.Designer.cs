@@ -6,6 +6,7 @@
         /// 必需的设计器变量。
         /// </summary>
         private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.Button Button1;
         /// <summary>
         /// 清理所有正在使用的资源。
         /// </summary>
@@ -27,9 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.Button Button1;
             Button1 = new System.Windows.Forms.Button();
-            SuspendLayout();
+            this.SuspendLayout();
             // 
             // Button1
             // 
@@ -47,14 +47,15 @@
             // 
             // FormMain
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(361, 238);
-            Controls.Add(Button1);
-            FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            Name = "FormMain";
-            Text = "PSOControl";
-            ResumeLayout(false);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(361, 238);
+            this.Controls.Add(Button1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Name = "FormMain";
+            this.Text = "PSOControl";
+            this.Load += new System.EventHandler(this.FormMain_Load);
+            this.ResumeLayout(false);
 
         }
 
