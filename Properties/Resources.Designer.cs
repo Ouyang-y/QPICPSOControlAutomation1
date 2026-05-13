@@ -59,5 +59,15 @@ namespace QPICPSOControlAutomation1.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   查找类似于 (图标) 的 System.Drawing.Icon 类型的本地化资源。
+        /// </summary>
+        internal static System.Drawing.Icon Icon_256x256 {
+            get {
+                object obj = ResourceManager.GetObject("Icon_256x256", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
     }
 }

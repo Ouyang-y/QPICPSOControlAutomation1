@@ -8,23 +8,32 @@ namespace QPICPSOControlAutomation1
 {
     public partial class FormMain : Form
     {
+
+        #region Fields
+
         private Controller controller = Controller.Connect();  // 定义controller变量，并链接设备进行初始化
+        private ConfiguredParameters controllerParameters;
+
+        #endregion Fields
+        
         public FormMain()
         {
             InitializeComponent();  // 初始化窗体
-            this.FormClosing += FormMain_FormClosing;  // 链接窗体关闭句柄
         }
 
         #region 窗口打开/关闭
+
         private void FormMain_Load(object sender, EventArgs e)
         {
-            this.Visible = false;  // 先隐藏窗口，防止闪烁
             try
             {
                 // 打开时链接控制箱报错
                 // We can also subscribe to the ExceptionOccurred event to be notified of any errors that occur
                 // while the controller is retrieving status. If this event is raised, it will mean the status retrieval has been paused.
                 controller.Runtime.Status.Automatic.ExceptionOccurred += controller_ExceptionOccurred;
+
+                this.controllerParameters = this.controller.Configuration.Parameters.GetConfiguration();
+                if (this.controller.IsRunning) controller.Start();
 
                 // 打开时设定PsoOutputPin，依据硬件连接(当前为XR3，Output2，链接引脚10&12)
                 // https://help.aerotech.com/automation1/hardware-manuals/Automation1-iXR3-and-XR3-web/Chapter-2-Installation-and-Configuration/Position-Synchronized-Output-XR3.htm
@@ -48,7 +57,11 @@ namespace QPICPSOControlAutomation1
                     Button1.Text = "Laser Off";
                     Button1.BackColor = SystemColors.Control;  // 恢复默认
                 }
-                this.Visible = true;  // 成功后显示窗口
+                // 恢复上次窗口位置
+                this.Left = Properties.Settings.Default.WindowLeft;
+                this.Top = Properties.Settings.Default.WindowTop;
+                this.WindowState = FormWindowState.Normal;
+
             }
             catch (Exception ex)
             {
@@ -58,10 +71,15 @@ namespace QPICPSOControlAutomation1
         }
         private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
         {
-            controller.Runtime.Status.Automatic.ExceptionOccurred -= controller_ExceptionOccurred;
+            if (this.WindowState == FormWindowState.Normal)
+            {
+                Properties.Settings.Default.WindowLeft = this.Left;
+                Properties.Settings.Default.WindowTop = this.Top;
+            }
+            Properties.Settings.Default.Save();
             try
             {
-                controller?.Disconnect(); // 断连接
+                controller.Disconnect(); // 断连接
             }
             catch (Exception ex)
             {
@@ -69,6 +87,47 @@ namespace QPICPSOControlAutomation1
                 Application.Exit();  // 终止程序
             }
         }
+        private void FormMain_Shown(object sender, EventArgs e)
+        {
+            this.TopMost = true;  // 置顶
+        }
+
+        #endregion
+
+        #region 窗口焦点/失焦/移动
+
+        private void FormMain_Activated(object sender, EventArgs e)
+        {
+            if (this.IsDisposed || this.Disposing) return;
+            this.Opacity = 1.0;  // 100% 不透明
+        }
+        private void FormMain_Deactivate(object sender, EventArgs e)
+        {
+            if (this.IsDisposed || this.Disposing) return;
+            this.Opacity = 0.4;  // 20% 不透明
+        }
+        private void FormMain_Move(object sender, EventArgs e)
+        {
+            // 获取主屏幕的工作区域
+            Rectangle screenBounds = Screen.PrimaryScreen.WorkingArea;
+
+            // 限制左边界
+            if (this.Left < screenBounds.Left)
+                this.Left = screenBounds.Left;
+
+            // 限制上边界
+            if (this.Top < screenBounds.Top)
+                this.Top = screenBounds.Top;
+
+            // 限制右边界
+            if (this.Right > screenBounds.Right)
+                this.Left = screenBounds.Right - this.Width;
+
+            // 限制下边界
+            if (this.Bottom > screenBounds.Bottom)
+                this.Top = screenBounds.Bottom - this.Height;
+        }
+
         #endregion
 
         private void Button1_Click(object sender, EventArgs e)
